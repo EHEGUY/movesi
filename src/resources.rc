@@ -1,0 +1,5 @@
+#include <windows.h>
+#include "resource.h"
+
+// Enable visual styles using the manifest
+1 24 "app.manifest"

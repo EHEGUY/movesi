@@ -1,0 +1,12 @@
+# Build outputs
+Movesi.exe
+Movesi
+*.obj
+*.o
+*.res
+*.app
+*.zip
+
+# OS temporary files
+.DS_Store
+Thumbs.db
