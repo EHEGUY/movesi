@@ -2,12 +2,17 @@ import Cocoa
 import SwiftUI
 import ApplicationServices
 import Carbon
+import IOKit.pwr_mgt
 
 class StatusController: NSObject {
     private var statusItem: NSStatusItem
     private var popover: NSPopover
     private var timer: Timer?
     private var actionTimer: Timer?
+    
+    // macOS sleep prevention state
+    private var assertionID: IOPMAssertionID = 0
+    private var hasAssertion = false
     
     // Application States (shared with SwiftUI)
     @ObservedObject var appState = AppState()
@@ -38,6 +43,10 @@ class StatusController: NSObject {
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.tick()
         }
+    }
+    
+    deinit {
+        allowMacSleep()
     }
     
     @objc func togglePopover(_ sender: AnyObject?) {
@@ -92,12 +101,13 @@ class StatusController: NSObject {
         if appState.isActive {
             appState.sessionStartTime = Date()
             appState.secondsRemaining = appState.sliderInterval
+            preventMacSleep()
         } else {
-            // Freeze accumulated time active
             if let start = appState.sessionStartTime {
                 appState.accumulatedTimeActive += Date().timeIntervalSince(start)
             }
             appState.sessionStartTime = nil
+            allowMacSleep()
         }
         updateStatusIcon()
     }
@@ -153,12 +163,37 @@ class StatusController: NSObject {
                 appState.accumulatedTimeActive += Date().timeIntervalSince(start)
             }
             appState.sessionStartTime = nil
+            allowMacSleep()
             updateStatusIcon()
         } else if shouldResume && !appState.isActive && !shouldPause {
             appState.isActive = true
             appState.sessionStartTime = Date()
             appState.secondsRemaining = appState.sliderInterval
+            preventMacSleep()
             updateStatusIcon()
+        }
+    }
+    
+    private func preventMacSleep() {
+        guard !hasAssertion else { return }
+        let reason = "Movesi Activity Simulation" as CFString
+        let result = IOPMAssertionCreateWithName(
+            kIOPMAssertionTypeNoDisplaySleep as CFString,
+            IOPMAssertionLevel(kIOPMAssertionLevelOn),
+            reason,
+            &assertionID
+        )
+        if result == kIOReturnSuccess {
+            hasAssertion = true
+        }
+    }
+    
+    private func allowMacSleep() {
+        guard hasAssertion else { return }
+        let result = IOPMAssertionRelease(assertionID)
+        if result == kIOReturnSuccess {
+            hasAssertion = false
+            assertionID = 0
         }
     }
     
@@ -183,11 +218,12 @@ class StatusController: NSObject {
             // Invert Y coordinate for CoreGraphics (0,0 is top-left)
             let currentCGPos = CGPoint(x: currentMousePos.x, y: screenFrame.height - currentMousePos.y)
             
-            let dx = CGFloat(Int.random(in: -2...2))
-            let dy = CGFloat(Int.random(in: -2...2))
+            // Random displacement in range 10 to 20 pixels to trigger activity reliably
+            let dx = CGFloat(Int.random(in: 10...20))
+            let dy = CGFloat(Int.random(in: 10...20))
             
-            let finalDisplacementX = dx == 0 ? 2 : dx
-            let finalDisplacementY = dy == 0 ? 2 : dy
+            let finalDisplacementX = Bool.random() ? dx : -dx
+            let finalDisplacementY = Bool.random() ? dy : -dy
             
             let newPos = CGPoint(x: currentCGPos.x + finalDisplacementX, y: currentCGPos.y + finalDisplacementY)
             

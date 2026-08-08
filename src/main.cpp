@@ -25,6 +25,16 @@
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 #endif
 
+#ifndef ES_CONTINUOUS
+#define ES_CONTINUOUS       0x80000000
+#endif
+#ifndef ES_DISPLAY_REQUIRED
+#define ES_DISPLAY_REQUIRED 0x00000002
+#endif
+#ifndef ES_SYSTEM_REQUIRED
+#define ES_SYSTEM_REQUIRED  0x00000001
+#endif
+
 // Colors for Dark Mode
 #define DARK_BG             RGB(18, 18, 18)
 #define DARK_CARD           RGB(30, 30, 30)
@@ -93,6 +103,7 @@ void CheckSchedules(HWND hWnd);
 void FormatDuration(time_t seconds, wchar_t* buffer, size_t bufferSize);
 void SetImmersiveDarkMode(HWND hWnd, bool dark);
 void TrimMemory();
+void SetSimulationState(bool active);
 void RecalculateLayout(HWND hWnd);
 void RecreateFonts(HWND hWnd);
 int Scale(int value);
@@ -367,16 +378,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             TrimMemory();
             break;
         case ID_TRAY_TOGGLE:
-            isActive = !isActive;
-            if (isActive) {
-                sessionStartTime = time(NULL);
-                secondsRemaining = sliderInterval;
-            } else {
-                // Freeze stats on transition to paused
-                accumulatedTimeActive += time(NULL) - sessionStartTime;
-                sessionStartTime = 0;
-            }
-            UpdateTrayIcon();
+            SetSimulationState(!isActive);
             InvalidateRect(hWnd, NULL, FALSE);
             TrimMemory();
             break;
@@ -453,16 +455,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             int control = GetControlUnderMouse(hWnd, x, y);
 
             if (control == 1) { // Toggle Switch
-                isActive = !isActive;
-                if (isActive) {
-                    sessionStartTime = time(NULL);
-                    secondsRemaining = sliderInterval;
-                } else {
-                    // Freeze stats
-                    accumulatedTimeActive += time(NULL) - sessionStartTime;
-                    sessionStartTime = 0;
-                }
-                UpdateTrayIcon();
+                SetSimulationState(!isActive);
                 InvalidateRect(hWnd, NULL, FALSE);
             }
             else if (control >= 2 && control <= 4) { // Action cards
@@ -859,18 +852,20 @@ void UpdateTrayIcon() {
 
 void PerformSimulationAction() {
     if (selectedAction == 0) {
-        POINT pt;
-        if (GetCursorPos(&pt)) {
-            int dx = (rand() % 5) - 2; 
-            int dy = (rand() % 5) - 2; 
-            
-            if (dx == 0 && dy == 0) {
-                dx = (rand() % 2) ? 2 : -2;
-                dy = (rand() % 2) ? 2 : -2;
-            }
+        // Relative mouse movement (simulates hardware-level activity)
+        // with a larger displacement (10 to 20 pixels) to reset the OS idle timer.
+        int dx = (rand() % 11) + 10; // 10 to 20 pixels
+        int dy = (rand() % 11) + 10; // 10 to 20 pixels
+        if (rand() % 2) dx = -dx;
+        if (rand() % 2) dy = -dy;
 
-            SetCursorPos(pt.x + dx, pt.y + dy);
-        }
+        INPUT input = { 0 };
+        input.type = INPUT_MOUSE;
+        input.mi.dwFlags = MOUSEEVENTF_MOVE;
+        input.mi.dx = dx;
+        input.mi.dy = dy;
+
+        SendInput(1, &input, sizeof(INPUT));
     }
     else if (selectedAction == 1) {
         INPUT inputs[2] = { 0 };
@@ -923,18 +918,11 @@ void CheckSchedules(HWND hWnd) {
     }
 
     if (shouldPause && isActive) {
-        isActive = false;
-        // Freeze active duration
-        accumulatedTimeActive += time(NULL) - sessionStartTime;
-        sessionStartTime = 0;
-        UpdateTrayIcon();
+        SetSimulationState(false);
         InvalidateRect(hWnd, NULL, FALSE);
     }
     else if (shouldResume && !isActive && !shouldPause) {
-        isActive = true;
-        sessionStartTime = time(NULL);
-        secondsRemaining = sliderInterval;
-        UpdateTrayIcon();
+        SetSimulationState(true);
         InvalidateRect(hWnd, NULL, FALSE);
     }
 }
@@ -970,4 +958,20 @@ void TrimMemory() {
         }
         FreeLibrary(hPsapi);
     }
+}
+
+void SetSimulationState(bool active) {
+    isActive = active;
+    if (active) {
+        sessionStartTime = time(NULL);
+        secondsRemaining = sliderInterval;
+        SetThreadExecutionState(ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
+    } else {
+        if (sessionStartTime != 0) {
+            accumulatedTimeActive += time(NULL) - sessionStartTime;
+            sessionStartTime = 0;
+        }
+        SetThreadExecutionState(ES_CONTINUOUS);
+    }
+    UpdateTrayIcon();
 }
