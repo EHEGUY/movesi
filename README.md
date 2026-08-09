@@ -2,6 +2,11 @@
 
 Movesi is a lightweight, zero-dependency system tray (Windows) and menu bar (macOS) utility designed to prevent session timeouts, screen locks, and system sleep. It works by simulating user activity at randomized micro-intervals. 
 
+Just a quick note: I made this because I didn’t want my Steam game downloads to stop whenever my PC went to sleep. Windows consumes way too much RAM and network bandwidth, which slows down my already slow internet, especially when I’m trying to download a game while I’m asleep.
+There are still a few things here and there that need to be fixed. The README was generated entirely with AI, and the app was also built with the help of AI. I kept it very lightweight and simple, and it’s designed to work on both Windows and Mac.
+It’s still in testing, but it’s working fine on Windows so far!
+
+
 Movesi is designed to be fully offline, private (no telemetry), and extremely resource-efficient.
 
 ## Features & Memory Optimization
