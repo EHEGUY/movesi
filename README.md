@@ -70,19 +70,26 @@ To make Movesi launch automatically on system logon:
 * **Xcode 12.0+**
 
 ### Compilation
-You can compile the app using the command line via Xcode tools:
+You can compile the app using the command line via Xcode tools (this auto-detects your architecture instead of forcing x86_64):
 ```bash
-swiftc -O -sdk $(xcrun --show-sdk-path --sdk macosx) -target x86_64-apple-macos11.0 -o Movesi macos/MovesiApp.swift macos/StatusController.swift
+swiftc -O \
+  -sdk "$(xcrun --show-sdk-path --sdk macosx)" \
+  -o Movesi \
+  macos/MovesiApp.swift macos/StatusController.swift
 ```
 
 ### Accessibility & Screen Recording Permissions
-Because macOS restricts applications from programmatically posting events to safeguard user privacy, you must grant permissions:
+Because macOS restricts applications from programmatically posting events to safeguard user privacy, you must grant permissions. 
+
+> [!IMPORTANT]
+> Since this compiles to a standalone command-line binary (`Movesi`) and not a packaged `.app` bundle, macOS attributes the execution to the **Terminal** or shell app running the program (e.g., `Terminal.app`, `iTerm.app`, or `VS Code`). Therefore, **you must grant Accessibility and Screen Recording permissions to your Terminal application** rather than the `Movesi` binary itself.
+
 1. **Accessibility Permission**:
    - The UI displays a warning card if permission is missing. Click **"Grant Permission"** or navigate to **System Settings > Privacy & Security > Accessibility**.
-   - Authenticate, click the `+` button, select `Movesi`, and toggle the switch to **On**.
+   - Authenticate, click the `+` button, select your **Terminal** app (or shell runner), and toggle the switch to **On**.
 2. **Screen Recording Permission (Sonoma 14+)**:
    - On macOS Sonoma and later, CoreGraphics coordinate calculations for mouse movement simulation may require **Screen Recording** permissions.
-   - If mouse movements fail to post, verify that Movesi is enabled in **System Settings > Privacy & Security > Screen Recording**.
+   - Verify that your **Terminal** app is enabled in **System Settings > Privacy & Security > Screen Recording**.
 
 ### Code Signing & Notarization
 Unsigned applications are blocked by macOS Gatekeeper.

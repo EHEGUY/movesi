@@ -22,18 +22,21 @@ Unlike normal applications, Movesi runs as an **accessory/agent application**.
 
 macOS implements strict security controls to protect your system. Because Movesi simulates mouse and keyboard inputs to keep your session active, you must grant it permissions. The app will show clear warnings in the menu bar panel if these are missing.
 
+> [!IMPORTANT]
+> Since this compiles to a standalone command-line binary (`Movesi`) rather than a packaged `.app` bundle, macOS attributes its activity to the **Terminal** or shell application that launched it (such as `Terminal.app`, `iTerm.app`, or `VS Code`). Therefore, **you must grant Accessibility and Screen Recording permissions to your Terminal application** rather than to the `Movesi` binary itself.
+
 ### Step 1: Grant Accessibility Access
-This allows Movesi to simulate keypresses and mouse movements.
+This allows the simulator to post keypresses and mouse movements.
 1. When you open the Movesi menu bar panel, click **Grant Accessibility Access**, or open **System Settings** manually.
 2. Go to **Privacy & Security** > **Accessibility**.
-3. Click the `+` button, select `Movesi`, and toggle the switch to **On**.
+3. Click the `+` button, select your **Terminal** app (or shell runner, e.g. `Terminal.app` or `iTerm.app`), and toggle the switch to **On**.
 4. Authenticate using your password or Touch ID.
 
 ### Step 2: Grant Screen Recording Access (macOS 14+ Sonoma and later)
 On newer versions of macOS, the operating system requires screen recording authorization to let apps calculate mouse coordinates accurately.
 1. In the Movesi panel, click **Grant Screen Recording Access**.
 2. Alternatively, navigate to **System Settings** > **Privacy & Security** > **Screen Recording**.
-3. Toggle the switch for `Movesi` to **On**.
+3. Toggle the switch for your **Terminal** app to **On**.
 4. *Note: Movesi does not record, store, or transmit your screen data. This permission is solely used to calculate mouse coordinates locally.*
 
 ---
@@ -58,7 +61,7 @@ graph TD
 * **Simulation Mode**:
   * **Move**: Performs invisible micro-movements of your mouse pointer.
   * **Click**: Simulates a left-click at the current position of the pointer.
-  * **Key**: Simulates a neutral keypress (`F15` function key) that doesn't disrupt typing.
+  * **Key**: Simulates a keypress. This defaults to the Spacebar (keycode `49`) to ensure universal keyboard support, but can be configured in the UI to any virtual keycode (e.g., `113` for `F15`).
 * **Interval Slider**: Set how frequently (between 5 and 120 seconds) Movesi should simulate user activity.
 * **Stats Panel**: Displays how long you have been active in the current session and the total number of actions simulated.
 * **Automation Settings**:

@@ -242,9 +242,10 @@ class StatusController: NSObject {
                 clickUp.post(tap: .cghidEventTap)
             }
             
-        case 2: // Key Press (F15 - Neutral keycode 113)
-            if let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: 113, keyDown: true),
-               let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 113, keyDown: false) {
+        case 2: // Key Press (Custom Virtual Keycode)
+            let keycode = CGKeyCode(appState.customKeycode)
+            if let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: keycode, keyDown: true),
+               let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: keycode, keyDown: false) {
                 keyDown.post(tap: .cghidEventTap)
                 keyUp.post(tap: .cghidEventTap)
             }
@@ -258,6 +259,7 @@ class StatusController: NSObject {
 class AppState: ObservableObject {
     @Published var isActive = false
     @Published var selectedAction = 0 // 0=Move, 1=Click, 2=Key
+    @Published var customKeycodeString = "49"
     @Published var sliderInterval = 30 // 5s to 120s
     @Published var secondsRemaining = 30
     @Published var totalActions = 0
@@ -267,6 +269,13 @@ class AppState: ObservableObject {
     @Published var enableBlackout = false
     @Published var hasAccessibility = false
     @Published var hasScreenRecording = false
+    
+    var customKeycode: Int {
+        if let val = Int(customKeycodeString), val >= 0 && val <= 65535 {
+            return val
+        }
+        return 49
+    }
     
     init() {
         checkAccessibility()
@@ -389,6 +398,45 @@ struct ContentView: View {
                 .pickerStyle(SegmentedPickerStyle())
             }
             
+            // Custom Keycode Input (if Key simulator is selected)
+            if state.selectedAction == 2 {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("VIRTUAL KEYCODE")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("e.g. 113 for F15, 49 for Space")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack(spacing: 8) {
+                        Image(systemName: "keyboard")
+                            .foregroundColor(.secondary)
+                        
+                        TextField("49", text: Binding(
+                            get: { state.customKeycodeString },
+                            set: { newValue in
+                                let filtered = newValue.filter { $0.isNumber }
+                                if filtered.count <= 5 {
+                                    state.customKeycodeString = filtered
+                                }
+                            }
+                        ))
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 80)
+                        
+                        Text(keyName(for: state.customKeycode))
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        Spacer()
+                    }
+                }
+                .transition(.opacity)
+            }
+            
             // Slider Interval & Countdown
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
@@ -482,5 +530,35 @@ struct ContentView: View {
         let m = (Int(seconds) % 3600) / 60
         let s = Int(seconds) % 60
         return String(format: "%02d:%02d:%02d", h, m, s)
+    }
+    
+    private func keyName(for code: Int) -> String {
+        switch code {
+        case 113: return "(F15)"
+        case 49: return "(Space)"
+        case 36: return "(Enter)"
+        case 53: return "(Escape)"
+        case 122: return "(F1)"
+        case 120: return "(F2)"
+        case 99: return "(F3)"
+        case 118: return "(F4)"
+        case 96: return "(F5)"
+        case 97: return "(F6)"
+        case 98: return "(F7)"
+        case 100: return "(F8)"
+        case 101: return "(F9)"
+        case 109: return "(F10)"
+        case 103: return "(F11)"
+        case 111: return "(F12)"
+        case 105: return "(F13)"
+        case 107: return "(F14)"
+        case 106: return "(F16)"
+        case 48: return "(Tab)"
+        case 123: return "(Left Arrow)"
+        case 124: return "(Right Arrow)"
+        case 125: return "(Down Arrow)"
+        case 126: return "(Up Arrow)"
+        default: return "(Custom Key)"
+        }
     }
 }
