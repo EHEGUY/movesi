@@ -394,7 +394,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             TrimMemory(); // Trim memory when hidden to tray
             return 0;
         }
-        break;
+        return DefWindowProc(hWnd, message, wParam, lParam);
 
     case WM_SETTINGCHANGE:
         if (lParam && wcscmp((wchar_t*)lParam, L"ImmersiveColorSet") == 0) {
