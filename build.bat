@@ -3,7 +3,7 @@ echo Compiling Resources...
 windres src\resources.rc -O coff -o src\resources.o
 
 echo Compiling Application...
-g++ -O2 -mwindows src\main.cpp src\resources.o -o Movesi.exe -luser32 -lgdi32 -lshell32 -lcomctl32
+g++ -O2 -mwindows src\main.cpp src\resources.o -o Movesi.exe -luser32 -lgdi32 -lshell32 -lcomctl32 -lgdiplus
 
 if %errorlevel% equ 0 (
     echo.
