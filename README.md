@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>A lightweight, zero-dependency session protection utility with an authentic 3D Liquid Glass UI.</strong>
+  <strong>A lightweight, zero-dependency session protection utility with 3D Liquid Glass UI.</strong>
 </p>
 
 ---
